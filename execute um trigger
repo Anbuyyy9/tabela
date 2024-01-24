@@ -1,0 +1,39 @@
+-- Criar a tabela Clientes
+CREATE TABLE Clientes (
+    ClienteID SERIAL PRIMARY KEY,
+    Nome VARCHAR(50),
+    Email VARCHAR(50),
+    Telefone VARCHAR(15)
+);
+
+-- Criar a tabela Pedidos
+CREATE TABLE Pedidos (
+    PedidoID SERIAL PRIMARY KEY,
+    ClienteID INT REFERENCES Clientes(ClienteID),
+    Produto VARCHAR(50),
+    Quantidade INT,
+    Total DECIMAL(10, 2)
+);
+
+-- Criar a tabela de log para armazenar informações após a inserção de um novo pedido
+CREATE TABLE LogPedidos (
+    LogID SERIAL PRIMARY KEY,
+    PedidoID INT REFERENCES Pedidos(PedidoID),
+    Data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Criar uma função para ser utilizada no trigger
+CREATE OR REPLACE FUNCTION AfterInsertPedido()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Coloque aqui o código que você deseja executar após a inserção de um novo pedido
+    INSERT INTO LogPedidos (PedidoID) VALUES (NEW.PedidoID);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Criar o trigger que chama a função após a inserção na tabela Pedidos
+CREATE TRIGGER trigger_after_insert_pedido
+AFTER INSERT ON Pedidos
+FOR EACH ROW
+EXECUTE FUNCTION AfterInsertPedido();
